@@ -53,6 +53,9 @@ main{max-width:640px;margin:0 auto;padding:14px 16px;display:flex;flex-direction
 .qid{display:flex;gap:10px}
 .qid .box{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 12px}
 .qid label{display:block;white-space:nowrap;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.qid .numrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pill{font-family:var(--body);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:#1e3a24;color:#8fe3a3;border-radius:999px;padding:3px 8px}
+.newbtn{margin-top:8px;width:100%;background:none;border:1.5px solid var(--yellow);color:var(--yellow);border-radius:10px;padding:8px;font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:.06em;text-transform:uppercase}
 .qid .num{font-family:var(--display);font-weight:800;font-size:26px;color:var(--yellow);letter-spacing:.03em}
 .qid input[type=date]{background:none;border:0;padding:4px 0;font-family:var(--display);font-weight:700;font-size:20px;width:100%}
 
@@ -132,7 +135,7 @@ textarea{resize:none}
 
 <main>
   <div class="qid">
-    <div class="box"><label>Cotización N°</label><div class="num" id="qNum">0001</div></div>
+    <div class="box"><label>Cotización N°</label><div class="numrow"><div class="num" id="qNum">0001</div><span class="pill" id="qSent" hidden>Enviada</span></div><button class="newbtn" id="btnNew">+ Nueva</button></div>
     <div class="box"><label for="qFecha">Fecha</label><input type="date" id="qFecha"></div>
   </div>
 
@@ -272,6 +275,7 @@ function totals(){
 function autosize(t){t.style.height="auto";t.style.height=Math.max(44,t.scrollHeight+2)+"px"}
 function renderAll(){
   $("qNum").textContent=pad(S.num);
+  $("qSent").hidden=!S.saved;
   $("qFecha").value=S.fecha;
   for(const k of ["nombre","tel","patente","vehiculo","km"]) $("c"+k[0].toUpperCase()+k.slice(1)).value=S.cliente[k]||"";
   $("qObs").value=S.obs||""; $("qValidez").value=S.validez||"";
@@ -310,6 +314,19 @@ for(const k of ["nombre","tel","patente","vehiculo","km"]){
 $("qObs").oninput=e=>{S.obs=e.target.value;save()};
 $("qValidez").oninput=e=>{e.target.value=e.target.value.replace(/\D/g,"");S.validez=e.target.value;save()};
 
+/* a sent quote is locked: first edit asks to correct it or start a new one */
+let editOk=false;
+document.querySelector("main").addEventListener("focusin",e=>{
+  if(!S.saved||editOk)return;
+  const el=e.target;if(!el.matches("input,textarea")||el.id==="numIn")return;
+  el.blur();
+  const s=sheet(`<h3>Cotización N° ${pad(S.num)} ya enviada</h3><p>¿Quieres hacer una cotización nueva para otro cliente, o corregir esta misma?</p>
+    <div class="row-btns"><button class="btn sec" data-fix>Corregir esta</button><button class="btn pri" data-new>Nueva N° ${pad(nextNum())}</button></div>`);
+  s.querySelector("[data-new]").onclick=()=>{s.remove();newQuote()};
+  s.querySelector("[data-fix]").onclick=()=>{s.remove();editOk=true;setTimeout(()=>el.focus(),50)};
+});
+$("btnNew").onclick=()=>newQuote();
+
 /* ---------- toast & sheets ---------- */
 let toastT;
 function toast(msg,act,fn){
@@ -345,9 +362,10 @@ $("btnMenu").onclick=()=>{
   s.querySelector('[data-a="dl"]').onclick=()=>{s.remove();output("download")};
   s.querySelector('[data-a="num"]').onclick=()=>{s.remove();editNum()};
 };
+function nextNum(){const h=store.get(K_HIST,[]);return Math.max(store.get(K_NEXT,1),S.num+1,...h.map(q=>q.num+1))}
 function hasContent(){return S.items.some(it=>it.d.trim()||parseMoney(it.p))||S.cliente.nombre.trim()}
 function newQuote(){
-  const go=()=>{const cur=S.num;const next=Math.max(store.get(K_NEXT,1),cur+1);store.set(K_NEXT,next);S=blank();save();renderAll();window.scrollTo(0,0);toast("Cotización N° "+pad(S.num)+" lista")};
+  const go=()=>{const next=nextNum();store.set(K_NEXT,next);S=blank();editOk=false;save();renderAll();window.scrollTo(0,0);toast("Cotización N° "+pad(S.num)+" lista")};
   if(hasContent()&&!S.saved) ask("¿Empezar una nueva?","La cotización actual no se ha enviado. Si continúas, se guardará en el historial y se abrirá una nueva en blanco.","Nueva",()=>{archive();go()});
   else go();
 }
@@ -357,6 +375,7 @@ function editNum(){
     <div class="row-btns"><button class="btn sec" data-x>Cancelar</button><button class="btn pri" data-ok>Guardar</button></div>`);
   s.querySelector("[data-x]").onclick=()=>s.remove();
   s.querySelector("[data-ok]").onclick=()=>{const n=parseInt(s.querySelector("#numIn").value.replace(/\D/g,""),10);
+    if(n>0&&n!==S.num&&store.get(K_HIST,[]).some(q=>q.num===n)){toast("El N° "+pad(n)+" ya existe en el historial");return}
     if(n>0){S.num=n;store.set(K_NEXT,n);save();renderAll();toast("Número actualizado a "+pad(n))}s.remove();};
 }
 function archive(){
@@ -375,9 +394,9 @@ function showHist(){
     :'<div class="empty">Aún no hay cotizaciones enviadas.</div>'}</div>`);
   s.addEventListener("click",e=>{
     const o=e.target.closest("[data-open]"),d=e.target.closest("[data-dup]");
-    if(o){S={...JSON.parse(JSON.stringify(h[+o.dataset.open])),saved:true};save();renderAll();s.remove();window.scrollTo(0,0);toast("Abierta N° "+pad(S.num))}
-    if(d){const src=JSON.parse(JSON.stringify(h[+d.dataset.dup]));const next=Math.max(store.get(K_NEXT,1),...h.map(q=>q.num+1));
-      store.set(K_NEXT,next);S={...src,num:next,fecha:today(),saved:false};delete S.total;delete S.ts;save();renderAll();s.remove();window.scrollTo(0,0);toast("Copia creada como N° "+pad(next))}
+    if(o){S={...JSON.parse(JSON.stringify(h[+o.dataset.open])),saved:true};editOk=false;save();renderAll();s.remove();window.scrollTo(0,0);toast("Abierta N° "+pad(S.num))}
+    if(d){const src=JSON.parse(JSON.stringify(h[+d.dataset.dup]));const next=nextNum();
+      store.set(K_NEXT,next);S={...src,num:next,fecha:today(),saved:false};editOk=false;delete S.total;delete S.ts;save();renderAll();s.remove();window.scrollTo(0,0);toast("Copia creada como N° "+pad(next))}
   });
 }
 
@@ -551,18 +570,18 @@ async function output(mode){
   await loadAssets();
   let doc;try{doc=buildPDF()}catch(e){console.error(e);toast("No se pudo crear el PDF. Revisa los datos e intenta otra vez.");return}
   const blob=doc.output("blob"),name=fileName();
-  archive();S.saved=true;save();
+  if(mode!=="preview"){archive();S.saved=true;editOk=false;save();$("qSent").hidden=false;}
   if(mode==="share"){
     const file=new File([blob],name,{type:"application/pdf"});
     if(navigator.canShare&&navigator.canShare({files:[file]})){
-      try{await navigator.share({files:[file],title:"Cotización N° "+pad(S.num),text:"Cotización N° "+pad(S.num)+" - BenavideSport. Total: "+clp(totals())});toast("Cotización enviada y guardada");}
+      try{await navigator.share({files:[file],title:"Cotización N° "+pad(S.num),text:"Cotización N° "+pad(S.num)+" - BenavideSport. Total: "+clp(totals())});toast("N° "+pad(S.num)+" enviada y guardada","Nueva",()=>newQuote());}
       catch(e){if(e.name!=="AbortError")download(blob,name);}
       return;
     }
     download(blob,name);toast("Este navegador no permite compartir directo. El PDF se descargó.");return;
   }
   if(mode==="preview"){const url=URL.createObjectURL(blob);const w=window.open(url,"_blank");if(!w)download(blob,name);setTimeout(()=>URL.revokeObjectURL(url),60000);return}
-  download(blob,name);toast("PDF descargado");
+  download(blob,name);toast("PDF descargado","Nueva",()=>newQuote());
 }
 function download(blob,name){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)}
 $("btnShare").onclick=()=>output("share");
