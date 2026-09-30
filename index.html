@@ -148,7 +148,11 @@ textarea{resize:none}
         <div class="f"><label for="cPatente">Patente</label><input id="cPatente" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase"></div>
       </div>
       <div class="grid2">
-        <div class="f"><label for="cVehiculo">Vehículo (marca / modelo / año)</label><input id="cVehiculo" autocomplete="off"></div>
+        <div class="f"><label for="cMarca">Marca</label><input id="cMarca" autocomplete="off" autocapitalize="words"></div>
+        <div class="f"><label for="cModelo">Modelo</label><input id="cModelo" autocomplete="off" autocapitalize="words"></div>
+      </div>
+      <div class="grid2">
+        <div class="f"><label for="cAnio">Año</label><input id="cAnio" inputmode="numeric" maxlength="4" autocomplete="off"></div>
         <div class="f"><label for="cKm">Kilometraje</label><input id="cKm" inputmode="numeric" autocomplete="off"></div>
       </div>
     </div>
@@ -237,7 +241,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",
 /* ---------- state ---------- */
 function blank(){
   const next=store.get(K_NEXT,1);
-  return {num:next,fecha:today(),cliente:{nombre:"",tel:"",patente:"",vehiculo:"",km:""},
+  return {num:next,fecha:today(),cliente:{nombre:"",tel:"",patente:"",marca:"",modelo:"",anio:"",km:""},
           items:[{d:"",q:"1",p:""}],obs:"",validez:"15",saved:false};
 }
 let S=store.get(K_DRAFT,null)||blank();
@@ -277,7 +281,7 @@ function renderAll(){
   $("qNum").textContent=pad(S.num);
   $("qSent").hidden=!S.saved;
   $("qFecha").value=S.fecha;
-  for(const k of ["nombre","tel","patente","vehiculo","km"]) $("c"+k[0].toUpperCase()+k.slice(1)).value=S.cliente[k]||"";
+  for(const k of ["nombre","tel","patente","marca","modelo","anio","km"]) $("c"+k[0].toUpperCase()+k.slice(1)).value=S.cliente[k]||"";
   $("qObs").value=S.obs||""; $("qValidez").value=S.validez||"";
   renderItems();
   fillDatalist();
@@ -308,7 +312,7 @@ $("items").addEventListener("click",e=>{
 $("btnAdd").onclick=()=>{S.items.push({d:"",q:"1",p:""});save();renderItems(S.items.length-1);
   setTimeout(()=>$("d"+(S.items.length-1)).scrollIntoView({behavior:"smooth",block:"center"}),50);};
 $("qFecha").onchange=e=>{S.fecha=e.target.value||today();save()};
-for(const k of ["nombre","tel","patente","vehiculo","km"]){
+for(const k of ["nombre","tel","patente","marca","modelo","anio","km"]){
   $("c"+k[0].toUpperCase()+k.slice(1)).addEventListener("input",e=>{S.cliente[k]=k==="patente"?e.target.value.toUpperCase():e.target.value;save();});
 }
 $("qObs").oninput=e=>{S.obs=e.target.value;save()};
@@ -471,17 +475,17 @@ function buildPDF(){
 
   /* client & vehicle: label above value, values wrap (never cut) */
   const c=S.cliente;
-  const fields=[["CLIENTE",c.nombre],["TELÉFONO",c.tel],["VEHÍCULO",c.vehiculo],["PATENTE",c.patente],["KILOMETRAJE",c.km?miles(parseMoney(c.km))+" km":""]]
+  const fields=[["CLIENTE",c.nombre],["TELÉFONO",c.tel],["PATENTE",c.patente],["MARCA",c.marca],["MODELO",c.modelo],["AÑO",c.anio],["KILOMETRAJE",c.km?miles(parseMoney(c.km))+" km":""],["VEHÍCULO",c.vehiculo]]
     .filter(f=>String(f[1]||"").trim());
   if(fields.length){
-    const colW=(CW-12)/2-4;F("Barlow","semibold",10.5);
+    const NC=3,colW=(CW-12)/NC-4;F("Barlow","semibold",10.5);
     const cells=fields.map(f=>({l:f[0],v:doc.splitTextToSize(String(f[1]).trim(),colW)}));
-    const rows=[];for(let i=0;i<cells.length;i+=2)rows.push(cells.slice(i,i+2));
+    const rows=[];for(let i=0;i<cells.length;i+=NC)rows.push(cells.slice(i,i+NC));
     const rh=rows.map(r=>4.2+Math.max(...r.map(x=>x.v.length))*LH(10.5)+2.4);
     const bh=5+rh.reduce((a,b)=>a+b,0);
     doc.setFillColor(...GR);doc.rect(M,y,CW,bh,"F");doc.setFillColor(...Y);doc.rect(M,y,1.6,bh,"F");
     let yy=y+5;
-    rows.forEach((r,ri)=>{r.forEach((cell,ci)=>{const x=M+7+ci*(CW/2);
+    rows.forEach((r,ri)=>{r.forEach((cell,ci)=>{const x=M+7+ci*((CW-7)/NC);
       F("Saira","bold",7.8,MU);doc.text(cell.l,x,yy+1.5,{charSpace:.5});
       F("Barlow","semibold",10.5,TX);doc.text(cell.v,x,yy+6,{lineHeightFactor:1.28});});yy+=rh[ri];});
     y+=bh+7;
