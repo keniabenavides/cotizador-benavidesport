@@ -356,11 +356,13 @@ $("btnMenu").onclick=()=>{
     <button data-a="new">${I_NEW}Nueva cotización</button>
     <button data-a="hist">${I_HIS}Historial de cotizaciones</button>
     <button data-a="dl">${I_DL}Descargar PDF al teléfono</button>
-    <button data-a="num">${I_NUM}Cambiar número de cotización</button></div>`);
+    <button data-a="num">${I_NUM}Cambiar número de cotización</button>
+    <button data-a="reset">${I_NUM}Reiniciar numeración (borra historial)</button></div>`);
   s.querySelector('[data-a="new"]').onclick=()=>{s.remove();newQuote()};
   s.querySelector('[data-a="hist"]').onclick=()=>{s.remove();showHist()};
   s.querySelector('[data-a="dl"]').onclick=()=>{s.remove();output("download")};
   s.querySelector('[data-a="num"]').onclick=()=>{s.remove();editNum()};
+  s.querySelector('[data-a="reset"]').onclick=()=>{s.remove();ask("¿Reiniciar numeración?","Se borrará el historial de cotizaciones de este teléfono y la próxima cotización será la N° 0001. Los PDF ya enviados no se ven afectados.","Reiniciar",()=>{try{localStorage.removeItem(K_HIST);localStorage.removeItem(K_DRAFT)}catch(e){}store.set(K_NEXT,1);S=blank();editOk=false;save();renderAll();window.scrollTo(0,0);toast("Numeración reiniciada: N° 0001")})};
 };
 function nextNum(){const h=store.get(K_HIST,[]);return Math.max(store.get(K_NEXT,1),S.num+1,...h.map(q=>q.num+1))}
 function hasContent(){return S.items.some(it=>it.d.trim()||parseMoney(it.p))||S.cliente.nombre.trim()}
