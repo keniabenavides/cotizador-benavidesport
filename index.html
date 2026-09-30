@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Cotizador BenavideSport</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="logo.jpg">
+<link rel="apple-touch-icon" href="logo.jpg">
+<style>
+@font-face{font-family:'Barlow';font-weight:400;font-display:swap;src:url(https://cdn.jsdelivr.net/npm/@expo-google-fonts/barlow@0.4.1/400Regular/Barlow_400Regular.ttf) format('truetype')}
+@font-face{font-family:'Barlow';font-weight:600;font-display:swap;src:url(https://cdn.jsdelivr.net/npm/@expo-google-fonts/barlow@0.4.1/600SemiBold/Barlow_600SemiBold.ttf) format('truetype')}
+@font-face{font-family:'Barlow';font-weight:700;font-display:swap;src:url(https://cdn.jsdelivr.net/npm/@expo-google-fonts/barlow@0.4.1/700Bold/Barlow_700Bold.ttf) format('truetype')}
+@font-face{font-family:'Saira Condensed';font-weight:700;font-display:swap;src:url(https://cdn.jsdelivr.net/npm/@expo-google-fonts/saira-condensed@0.4.1/700Bold/SairaCondensed_700Bold.ttf) format('truetype')}
+@font-face{font-family:'Saira Condensed';font-weight:800;font-display:swap;src:url(https://cdn.jsdelivr.net/npm/@expo-google-fonts/saira-condensed@0.4.1/800ExtraBold/SairaCondensed_800ExtraBold.ttf) format('truetype')}
+
+/* Garage-night UI: black carbon ground, turbo-yellow accents, chrome silver secondary. Single dark look on purpose (matches logo). */
+:root{
+  --bg:#0b0b0c; --panel:#161618; --panel-2:#1f1f22; --line:#2c2c30;
+  --fg:#f3f3f1; --muted:#9d9da3; --chrome:#c9cbd0;
+  --yellow:#ffd200; --yellow-2:#f5b800; --danger:#ff5a4f;
+  --display:"Saira Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;-webkit-tap-highlight-color:transparent}
+body{min-height:100vh;padding-bottom:calc(150px + env(safe-area-inset-bottom,0px));
+  background-image:radial-gradient(circle at 1px 1px,#1a1a1d 1px,transparent 1.5px);background-size:7px 7px}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+
+/* Header */
+.top{position:sticky;top:0;z-index:5;background:linear-gradient(#0b0b0c 70%,rgba(11,11,12,.92));
+  padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;border-bottom:2px solid var(--yellow);display:flex;align-items:center;gap:12px}
+.top img{width:46px;height:46px;flex:none}
+.brand{flex:1;min-width:0}
+.brand b{display:block;font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:.02em;line-height:1;text-transform:uppercase}
+.brand b span{color:var(--yellow)}
+.brand small{color:var(--muted);font-size:12.5px;letter-spacing:.04em}
+.iconbtn{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;width:44px;height:44px;display:grid;place-items:center;flex:none}
+.iconbtn svg{width:22px;height:22px}
+.checker{height:6px;background:repeating-linear-gradient(90deg,var(--yellow) 0 8px,#0b0b0c 8px 16px)}
+
+main{max-width:640px;margin:0 auto;padding:14px 16px;display:flex;flex-direction:column;gap:14px}
+
+/* Quote id strip */
+.qid{display:flex;gap:10px}
+.qid .box{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 12px}
+.qid label{display:block;white-space:nowrap;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.qid .num{font-family:var(--display);font-weight:800;font-size:26px;color:var(--yellow);letter-spacing:.03em}
+.qid input[type=date]{background:none;border:0;padding:4px 0;font-family:var(--display);font-weight:700;font-size:20px;width:100%}
+
+section.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.card h2{margin:0;padding:10px 14px;font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:.14em;text-transform:uppercase;
+  color:#0b0b0c;background:linear-gradient(90deg,var(--yellow),var(--yellow-2));display:flex;justify-content:space-between;align-items:center}
+.card h2 em{font-style:normal;font-weight:600;letter-spacing:.04em;text-transform:none;font-family:var(--body);font-size:13px}
+.card .in{padding:12px 14px;display:grid;gap:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.f label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;letter-spacing:.03em}
+.f input,.f textarea{width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-size:16px}
+.f input:focus,.f textarea:focus{border-color:var(--yellow);outline:none}
+textarea{resize:none}
+
+/* Line items */
+#items{display:flex;flex-direction:column}
+.item{padding:12px 14px;border-bottom:1px solid var(--line);display:grid;gap:8px}
+.item .row1{display:flex;gap:8px;align-items:flex-start}
+.item .n{font-family:var(--display);font-weight:800;color:var(--yellow);font-size:18px;width:22px;padding-top:10px;flex:none}
+.item textarea{flex:1;min-width:0;min-height:44px}
+.item .del{background:none;border:1px solid var(--line);border-radius:10px;width:44px;height:44px;color:var(--muted);display:grid;place-items:center;flex:none}
+.item .del svg{width:20px;height:20px}
+.item .row2{display:grid;grid-template-columns:64px 1fr 108px;gap:8px;align-items:end;padding-left:30px}
+.item .row2 input{text-align:right;font-variant-numeric:tabular-nums}
+.item .lt{min-width:0;text-align:right;font-family:var(--display);font-weight:700;font-size:19px;padding-bottom:10px;font-variant-numeric:tabular-nums;color:var(--chrome)}
+.add{margin:12px 14px;width:calc(100% - 28px);border:1.5px dashed var(--yellow);background:rgba(255,210,0,.06);color:var(--yellow);border-radius:12px;
+  padding:13px;font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:.08em;text-transform:uppercase;display:flex;gap:8px;justify-content:center;align-items:center}
+
+/* Bottom bar */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:#050505;border-top:2px solid var(--yellow);
+  padding:10px 16px calc(12px + env(safe-area-inset-bottom,0px))}
+.bar .wrap{max-width:640px;margin:0 auto;display:grid;gap:10px}
+.tot{display:flex;justify-content:space-between;align-items:baseline}
+.tot span{font-family:var(--display);font-weight:700;letter-spacing:.16em;color:var(--chrome);font-size:15px}
+.tot strong{font-family:var(--display);font-weight:800;font-size:32px;color:var(--yellow);font-variant-numeric:tabular-nums;line-height:1}
+.actions{display:grid;grid-template-columns:1fr 2fr;gap:10px}
+.btn{border:0;border-radius:12px;padding:14px 10px;font-family:var(--display);font-weight:800;font-size:17px;letter-spacing:.06em;text-transform:uppercase;display:flex;gap:8px;align-items:center;justify-content:center}
+.btn svg{width:20px;height:20px}
+.btn.pri{background:linear-gradient(180deg,#ffe04a,var(--yellow) 45%,var(--yellow-2));color:#0b0b0c;box-shadow:0 0 0 1px #0b0b0c inset}
+.btn.sec{background:linear-gradient(180deg,#e9eaee,#a9acb4);color:#0b0b0c}
+.btn:active{transform:translateY(1px)}
+
+/* Sheets */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.66);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--panel);width:100%;max-width:640px;border-radius:18px 18px 0 0;border-top:3px solid var(--yellow);
+  padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));max-height:85vh;overflow:auto;display:grid;gap:10px}
+.sheet h3{margin:0 0 4px;font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:.04em;text-transform:uppercase}
+.sheet p{margin:0;color:var(--muted);line-height:1.45}
+.menu button{width:100%;text-align:left;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:14px;font-size:16px;display:flex;gap:12px;align-items:center}
+.menu button svg{width:20px;height:20px;color:var(--yellow);flex:none}
+.hist{display:grid;gap:8px}
+.hist .h{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;grid-template-columns:1fr auto;gap:2px 10px;text-align:left}
+.hist .h b{font-family:var(--display);font-size:18px;color:var(--yellow)}
+.hist .h .amt{font-family:var(--display);font-weight:700;font-size:18px;text-align:right}
+.hist .h small{color:var(--muted);grid-column:1/-1}
+.hist .h .acts{grid-column:1/-1;display:flex;gap:8px;margin-top:8px}
+.hist .h .acts button{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:14px}
+.empty{color:var(--muted);text-align:center;padding:20px}
+.row-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(160px + env(safe-area-inset-bottom,0px));z-index:30;background:#f3f3f1;color:#0b0b0c;
+  border-radius:12px;padding:12px 14px;font-weight:600;display:flex;gap:14px;align-items:center;max-width:calc(100% - 32px);box-shadow:0 6px 24px rgba(0,0,0,.5)}
+.toast button{background:none;border:0;color:#8a6a00;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.sig{font-size:13px;color:var(--muted);text-align:center;padding:4px 0 8px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <img src="logo.jpg" alt="Logo BenavideSport">
+  <div class="brand"><b>Benavide<span>Sport</span></b><small>Cotizador de servicios</small></div>
+  <button class="iconbtn" id="btnMenu" aria-label="Menú">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+  </button>
+</header>
+<div class="checker" aria-hidden="true"></div>
+
+<main>
+  <div class="qid">
+    <div class="box"><label>Cotización N°</label><div class="num" id="qNum">0001</div></div>
+    <div class="box"><label for="qFecha">Fecha</label><input type="date" id="qFecha"></div>
+  </div>
+
+  <section class="card">
+    <h2>Cliente y vehículo <em>opcional</em></h2>
+    <div class="in">
+      <div class="f"><label for="cNombre">Nombre del cliente</label><input id="cNombre" autocomplete="off" autocapitalize="words"></div>
+      <div class="grid2">
+        <div class="f"><label for="cTel">Teléfono</label><input id="cTel" inputmode="tel" autocomplete="off"></div>
+        <div class="f"><label for="cPatente">Patente</label><input id="cPatente" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase"></div>
+      </div>
+      <div class="grid2">
+        <div class="f"><label for="cVehiculo">Vehículo (marca / modelo / año)</label><input id="cVehiculo" autocomplete="off"></div>
+        <div class="f"><label for="cKm">Kilometraje</label><input id="cKm" inputmode="numeric" autocomplete="off"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Detalle de servicios <em id="nItems">0 líneas</em></h2>
+    <div id="items"></div>
+    <button class="add" id="btnAdd">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Agregar línea
+    </button>
+  </section>
+
+  <section class="card">
+    <h2>Observaciones <em>opcional</em></h2>
+    <div class="in">
+      <div class="f"><label for="qObs">Notas para el cliente</label><textarea id="qObs" rows="3" placeholder="Ej: Repuestos sujetos a disponibilidad."></textarea></div>
+      <div class="f" style="max-width:180px"><label for="qValidez">Validez (días)</label><input id="qValidez" inputmode="numeric"></div>
+    </div>
+  </section>
+  <div class="sig">Firma en el PDF: <b>Nicolás Benavides</b> · Técnico</div>
+</main>
+
+<datalist id="svcList"></datalist>
+
+<div class="bar">
+  <div class="wrap">
+    <div class="tot"><span>TOTAL</span><strong id="gTotal">$0</strong></div>
+    <div class="actions">
+      <button class="btn sec" id="btnPreview">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>Ver
+      </button>
+      <button class="btn pri" id="btnShare">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg>Enviar PDF
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
+<script>window.jspdf||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>')</script>
+<script>
+"use strict";
+const EMPRESA = {
+  nombre1:"BENAVIDE", nombre2:"SPORT",
+  giro:"Servicios automotrices · Mecánica deportiva",
+  tel:"+56 9 7458 7396", correo:"nicolas.benavides62@gmail.com",
+  web:"www.benavidesport.cl", dir:"La Pintana, Santiago",
+  tecnico:"Nicolás Benavides", cargo:"Técnico"
+};
+const FONT_BASE="https://cdn.jsdelivr.net/npm/@expo-google-fonts/";
+const FONT_FILES={Barlow_400Regular:"barlow@0.4.1/400Regular/",Barlow_600SemiBold:"barlow@0.4.1/600SemiBold/",Barlow_700Bold:"barlow@0.4.1/700Bold/",
+  SairaCondensed_700Bold:"saira-condensed@0.4.1/700Bold/",SairaCondensed_800ExtraBold:"saira-condensed@0.4.1/800ExtraBold/"};
+let LOGO_PDF=null,PDF_FONTS=null,assetsP=null;
+const toB64=buf=>{const u=new Uint8Array(buf);let s="";for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)};
+function loadAssets(){
+  if(assetsP)return assetsP;
+  assetsP=(async()=>{
+    try{LOGO_PDF="data:image/jpeg;base64,"+toB64(await (await fetch("logo.jpg")).arrayBuffer())}catch(e){LOGO_PDF=null}
+    try{const out={};await Promise.all(Object.entries(FONT_FILES).map(async([k,v])=>{const r=await fetch(FONT_BASE+v+k+".ttf");if(!r.ok)throw 0;out[k]=toB64(await r.arrayBuffer())}));PDF_FONTS=out}
+    catch(e){PDF_FONTS=null}
+  })();
+  assetsP.then(()=>{if(!PDF_FONTS)assetsP=null});   // retry fonts next time if offline
+  return assetsP;
+}
+const K_DRAFT="bs_cot_draft", K_HIST="bs_cot_hist", K_NEXT="bs_cot_next";
+
+/* ---------- storage (safe) ---------- */
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},
+             set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+
+/* ---------- helpers ---------- */
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(4,"0");
+const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const fmtDate=iso=>{if(!iso)return"";const[y,m,d]=iso.split("-");return d+"-"+m+"-"+y};
+const miles=n=>{const s=String(Math.round(Math.abs(n)));return (n<0?"-":"")+s.replace(/\B(?=(\d{3})+(?!\d))/g,".")};
+const clp=n=>"$"+miles(n||0);
+const parseMoney=s=>parseInt(String(s).replace(/\D/g,""),10)||0;
+const parseQty=s=>{const v=parseFloat(String(s).replace(/\./g,"").replace(",","."));return isNaN(v)?0:v};
+const fmtQty=q=>Number.isInteger(q)?String(q):String(q).replace(".",",");
+const lineTotal=it=>Math.round(parseQty(it.q)*parseMoney(it.p));
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- state ---------- */
+function blank(){
+  const next=store.get(K_NEXT,1);
+  return {num:next,fecha:today(),cliente:{nombre:"",tel:"",patente:"",vehiculo:"",km:""},
+          items:[{d:"",q:"1",p:""}],obs:"",validez:"15",saved:false};
+}
+let S=store.get(K_DRAFT,null)||blank();
+const save=()=>store.set(K_DRAFT,S);
+
+/* ---------- render ---------- */
+const ICON_DEL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>';
+function renderItems(focusIdx){
+  const box=$("items");
+  box.innerHTML=S.items.map((it,i)=>`
+    <div class="item" data-i="${i}">
+      <div class="row1">
+        <div class="n">${i+1}</div>
+        <div class="f" style="flex:1;min-width:0"><label for="d${i}">Descripción del servicio</label>
+          <textarea id="d${i}" data-k="d" rows="1" list="svcList" placeholder="Ej: Cambio de aceite y filtro">${esc(it.d)}</textarea></div>
+        <button class="del" data-del="${i}" aria-label="Eliminar línea ${i+1}" style="margin-top:21px">${ICON_DEL}</button>
+      </div>
+      <div class="row2">
+        <div class="f"><label for="q${i}">Cant.</label><input id="q${i}" data-k="q" inputmode="decimal" value="${esc(it.q)}"></div>
+        <div class="f"><label for="p${i}">Valor unitario $</label><input id="p${i}" data-k="p" inputmode="numeric" placeholder="0" value="${it.p?miles(parseMoney(it.p)):""}"></div>
+        <div class="lt" id="lt${i}">${clp(lineTotal(it))}</div>
+      </div>
+    </div>`).join("");
+  box.querySelectorAll("textarea").forEach(autosize);
+  if(focusIdx!=null){const t=$("d"+focusIdx);t&&t.focus();}
+  totals();
+}
+function totals(){
+  const t=S.items.reduce((a,it)=>a+lineTotal(it),0);
+  $("gTotal").textContent=clp(t);
+  const n=S.items.filter(it=>it.d.trim()||parseMoney(it.p)).length;
+  $("nItems").textContent=n+(n===1?" línea":" líneas");
+  return t;
+}
+function autosize(t){t.style.height="auto";t.style.height=Math.max(44,t.scrollHeight+2)+"px"}
+function renderAll(){
+  $("qNum").textContent=pad(S.num);
+  $("qFecha").value=S.fecha;
+  for(const k of ["nombre","tel","patente","vehiculo","km"]) $("c"+k[0].toUpperCase()+k.slice(1)).value=S.cliente[k]||"";
+  $("qObs").value=S.obs||""; $("qValidez").value=S.validez||"";
+  renderItems();
+  fillDatalist();
+}
+function fillDatalist(){
+  const set=new Set();store.get(K_HIST,[]).forEach(q=>q.items.forEach(it=>it.d.trim()&&set.add(it.d.trim())));
+  $("svcList").innerHTML=[...set].slice(0,200).map(s=>`<option value="${esc(s)}">`).join("");
+}
+
+/* ---------- events ---------- */
+$("items").addEventListener("input",e=>{
+  const el=e.target,row=el.closest(".item");if(!row)return;
+  const i=+row.dataset.i,k=el.dataset.k;
+  if(k==="p"){const n=parseMoney(el.value);el.value=el.value.trim()===""?"":miles(n);S.items[i].p=el.value===""?"":String(n);}
+  else if(k==="q"){el.value=el.value.replace(/[^\d.,]/g,"");S.items[i].q=el.value;}
+  else {S.items[i].d=el.value;autosize(el);}
+  $("lt"+i).textContent=clp(lineTotal(S.items[i]));
+  totals();S.saved=false;save();
+});
+let undo=null;
+$("items").addEventListener("click",e=>{
+  const b=e.target.closest("[data-del]");if(!b)return;
+  const i=+b.dataset.del,removed=S.items.splice(i,1)[0];
+  if(!S.items.length)S.items.push({d:"",q:"1",p:""});
+  save();renderItems();
+  if(removed.d||removed.p){undo={i,removed};toast("Línea eliminada","Deshacer",()=>{S.items.splice(undo.i,0,undo.removed);if(S.items.length>1&&!S.items[S.items.length-1].d&&!S.items[S.items.length-1].p&&S.items.length-1!==undo.i)S.items.pop();save();renderItems();});}
+});
+$("btnAdd").onclick=()=>{S.items.push({d:"",q:"1",p:""});save();renderItems(S.items.length-1);
+  setTimeout(()=>$("d"+(S.items.length-1)).scrollIntoView({behavior:"smooth",block:"center"}),50);};
+$("qFecha").onchange=e=>{S.fecha=e.target.value||today();save()};
+for(const k of ["nombre","tel","patente","vehiculo","km"]){
+  $("c"+k[0].toUpperCase()+k.slice(1)).addEventListener("input",e=>{S.cliente[k]=k==="patente"?e.target.value.toUpperCase():e.target.value;save();});
+}
+$("qObs").oninput=e=>{S.obs=e.target.value;save()};
+$("qValidez").oninput=e=>{e.target.value=e.target.value.replace(/\D/g,"");S.validez=e.target.value;save()};
+
+/* ---------- toast & sheets ---------- */
+let toastT;
+function toast(msg,act,fn){
+  document.querySelector(".toast")?.remove();clearTimeout(toastT);
+  const t=document.createElement("div");t.className="toast";t.setAttribute("role","status");
+  t.innerHTML=`<span>${esc(msg)}</span>`+(act?`<button>${esc(act)}</button>`:"");
+  if(act)t.querySelector("button").onclick=()=>{fn();t.remove()};
+  document.body.appendChild(t);toastT=setTimeout(()=>t.remove(),act?5000:2600);
+}
+function sheet(html){
+  const s=document.createElement("div");s.className="scrim";
+  s.innerHTML=`<div class="sheet" role="dialog" aria-modal="true">${html}</div>`;
+  s.addEventListener("click",e=>{if(e.target===s)s.remove()});
+  document.body.appendChild(s);return s;
+}
+function ask(title,text,okLabel,fn){
+  const s=sheet(`<h3>${esc(title)}</h3><p>${esc(text)}</p><div class="row-btns"><button class="btn sec" data-x>Cancelar</button><button class="btn pri" data-ok>${esc(okLabel)}</button></div>`);
+  s.querySelector("[data-x]").onclick=()=>s.remove();
+  s.querySelector("[data-ok]").onclick=()=>{s.remove();fn()};
+}
+const I_NEW='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M12 11v6M9 14h6"/></svg>';
+const I_HIS='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+const I_DL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>';
+const I_NUM='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 4 7 20M17 4l-2 16M4 9h16M3 15h16"/></svg>';
+$("btnMenu").onclick=()=>{
+  const s=sheet(`<h3>Menú</h3><div class="menu" style="display:grid;gap:8px">
+    <button data-a="new">${I_NEW}Nueva cotización</button>
+    <button data-a="hist">${I_HIS}Historial de cotizaciones</button>
+    <button data-a="dl">${I_DL}Descargar PDF al teléfono</button>
+    <button data-a="num">${I_NUM}Cambiar número de cotización</button></div>`);
+  s.querySelector('[data-a="new"]').onclick=()=>{s.remove();newQuote()};
+  s.querySelector('[data-a="hist"]').onclick=()=>{s.remove();showHist()};
+  s.querySelector('[data-a="dl"]').onclick=()=>{s.remove();output("download")};
+  s.querySelector('[data-a="num"]').onclick=()=>{s.remove();editNum()};
+};
+function hasContent(){return S.items.some(it=>it.d.trim()||parseMoney(it.p))||S.cliente.nombre.trim()}
+function newQuote(){
+  const go=()=>{const cur=S.num;const next=Math.max(store.get(K_NEXT,1),cur+1);store.set(K_NEXT,next);S=blank();save();renderAll();window.scrollTo(0,0);toast("Cotización N° "+pad(S.num)+" lista")};
+  if(hasContent()&&!S.saved) ask("¿Empezar una nueva?","La cotización actual no se ha enviado. Si continúas, se guardará en el historial y se abrirá una nueva en blanco.","Nueva",()=>{archive();go()});
+  else go();
+}
+function editNum(){
+  const s=sheet(`<h3>Número de cotización</h3><p>Úsalo si quieres continuar la numeración que llevaban en papel.</p>
+    <div class="f"><label for="numIn">N° de esta cotización</label><input id="numIn" inputmode="numeric" value="${S.num}"></div>
+    <div class="row-btns"><button class="btn sec" data-x>Cancelar</button><button class="btn pri" data-ok>Guardar</button></div>`);
+  s.querySelector("[data-x]").onclick=()=>s.remove();
+  s.querySelector("[data-ok]").onclick=()=>{const n=parseInt(s.querySelector("#numIn").value.replace(/\D/g,""),10);
+    if(n>0){S.num=n;store.set(K_NEXT,n);save();renderAll();toast("Número actualizado a "+pad(n))}s.remove();};
+}
+function archive(){
+  const h=store.get(K_HIST,[]).filter(q=>q.num!==S.num);
+  h.unshift({...JSON.parse(JSON.stringify(S)),total:totals(),ts:Date.now()});
+  store.set(K_HIST,h.slice(0,300));
+  if(store.get(K_NEXT,1)<=S.num)store.set(K_NEXT,S.num+1);
+  fillDatalist();
+}
+function showHist(){
+  const h=store.get(K_HIST,[]);
+  const s=sheet(`<h3>Historial</h3><div class="hist">${h.length?h.map((q,i)=>`
+    <div class="h"><b>N° ${pad(q.num)}</b><span class="amt">${clp(q.total)}</span>
+    <small>${fmtDate(q.fecha)} · ${esc(q.cliente.nombre||"Sin nombre")}${q.cliente.patente?" · "+esc(q.cliente.patente):""}</small>
+    <div class="acts"><button data-open="${i}">Abrir</button><button data-dup="${i}">Duplicar como nueva</button></div></div>`).join("")
+    :'<div class="empty">Aún no hay cotizaciones enviadas.</div>'}</div>`);
+  s.addEventListener("click",e=>{
+    const o=e.target.closest("[data-open]"),d=e.target.closest("[data-dup]");
+    if(o){S={...JSON.parse(JSON.stringify(h[+o.dataset.open])),saved:true};save();renderAll();s.remove();window.scrollTo(0,0);toast("Abierta N° "+pad(S.num))}
+    if(d){const src=JSON.parse(JSON.stringify(h[+d.dataset.dup]));const next=Math.max(store.get(K_NEXT,1),...h.map(q=>q.num+1));
+      store.set(K_NEXT,next);S={...src,num:next,fecha:today(),saved:false};delete S.total;delete S.ts;save();renderAll();s.remove();window.scrollTo(0,0);toast("Copia creada como N° "+pad(next))}
+  });
+}
+
+/* ---------- PDF ---------- */
+let fontsReady=false;
+function loadFonts(doc){
+  if(!PDF_FONTS)return false;
+  for(const [file,fam,style] of [["Barlow_400Regular","Barlow","normal"],["Barlow_600SemiBold","Barlow","semibold"],["Barlow_700Bold","Barlow","bold"],["SairaCondensed_700Bold","Saira","bold"],["SairaCondensed_800ExtraBold","Saira","black"]]){
+    doc.addFileToVFS(file+".ttf",PDF_FONTS[file]);doc.addFont(file+".ttf",fam,style);
+  }
+  return true;
+}
+function buildPDF(){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:"mm",format:"a4",compress:true});
+  const custom=loadFonts(doc);
+  const W=210,H=297,M=14,CW=W-2*M;
+  const Y=[255,210,0],BK=[11,11,12],CAR=[26,26,29],SIL=[176,179,186],GR=[245,245,242],LN=[222,222,218],TX=[24,24,27],MU=[104,104,112];
+  const TOP=58,LIMIT=H-22;              // printable band: below header, above footer
+  const items=S.items.filter(it=>it.d.trim()||parseMoney(it.p));
+  const total=items.reduce((a,it)=>a+lineTotal(it),0);
+  const F=(fam,st,size,col)=>{if(!custom){fam="helvetica";st=(st==="normal")?"normal":"bold"}doc.setFont(fam,st);doc.setFontSize(size);if(col)doc.setTextColor(...col)};
+  const LH=pt=>pt*0.3528*1.28;          // line height in mm for a font size
+
+  function checker(x,y,w,h,sq){for(let i=0;i*sq<w;i++)for(let j=0;j*sq<h;j++){doc.setFillColor(...((i+j)%2?BK:Y));doc.rect(x+i*sq,y+j*sq,Math.min(sq,w-i*sq),Math.min(sq,h-j*sq),"F")}}
+  function slash(x,w,col){doc.setFillColor(...col);doc.triangle(x,46,x+14,0,x+14+w,0,"F");doc.triangle(x,46,x+14+w,0,x+w,46,"F")}
+
+  function header(){
+    doc.setFillColor(...BK);doc.rect(0,0,W,46,"F");
+    slash(118,5,CAR);slash(127,2.5,CAR);slash(133,1.2,CAR);
+    if(LOGO_PDF)doc.addImage(LOGO_PDF,"JPEG",M-3,4,38,38);
+    F("Saira","black",27,[246,246,244]);doc.text(EMPRESA.nombre1,M+39,19.5);
+    const w1=doc.getTextWidth(EMPRESA.nombre1);doc.setTextColor(...Y);doc.text(EMPRESA.nombre2,M+39+w1,19.5);
+    F("Saira","bold",9,SIL);doc.text(EMPRESA.giro.toUpperCase(),M+39,25.5,{charSpace:.35});
+    F("Barlow","normal",8.8,[226,226,228]);
+    doc.text(EMPRESA.tel+"   ·   "+EMPRESA.correo,M+39,32.5);
+    doc.text(EMPRESA.web+"   ·   "+EMPRESA.dir,M+39,37.5);
+    // quote tag
+    doc.setFillColor(...Y);doc.rect(W-60,8,60,19,"F");doc.triangle(W-67,27,W-60,8,W-60,27,"F");
+    F("Saira","black",17,BK);doc.text("COTIZACIÓN",W-M,17,{align:"right",charSpace:.5});
+    F("Saira","bold",12,BK);doc.text("N° "+pad(S.num),W-M,23.8,{align:"right",charSpace:.3});
+    F("Barlow","normal",9,[236,236,238]);
+    doc.text("Fecha: "+fmtDate(S.fecha),W-M,34,{align:"right"});
+    if(S.validez)doc.text("Validez: "+S.validez+" días",W-M,39,{align:"right"});
+    doc.setFillColor(...Y);doc.rect(0,46,W,1.6,"F");checker(W-58,47.6,58,3.2,1.6);
+  }
+  function footer(p,n){
+    doc.setFillColor(...BK);doc.rect(0,H-13,W,13,"F");doc.setFillColor(...Y);doc.rect(0,H-13,W,.9,"F");
+    checker(0,H-12.1,24,3.2,1.6);
+    F("Saira","bold",12,Y);doc.text(EMPRESA.web.toUpperCase(),W/2,H-4.8,{align:"center",charSpace:1});
+    if(n>1){F("Barlow","normal",8,[210,210,212]);doc.text("Pág. "+p+" de "+n,W-M,H-4.8,{align:"right"})}
+  }
+  let y=TOP;
+  function newPage(){doc.addPage();header();y=TOP}
+  function label(txt,x,yy){F("Saira","bold",9,TX);doc.text(txt,x,yy,{charSpace:.6});doc.setFillColor(...Y);doc.rect(x,yy+1.5,16,.9,"F")}
+
+  header();
+
+  /* client & vehicle: label above value, values wrap (never cut) */
+  const c=S.cliente;
+  const fields=[["CLIENTE",c.nombre],["TELÉFONO",c.tel],["VEHÍCULO",c.vehiculo],["PATENTE",c.patente],["KILOMETRAJE",c.km?miles(parseMoney(c.km))+" km":""]]
+    .filter(f=>String(f[1]||"").trim());
+  if(fields.length){
+    const colW=(CW-12)/2-4;F("Barlow","semibold",10.5);
+    const cells=fields.map(f=>({l:f[0],v:doc.splitTextToSize(String(f[1]).trim(),colW)}));
+    const rows=[];for(let i=0;i<cells.length;i+=2)rows.push(cells.slice(i,i+2));
+    const rh=rows.map(r=>4.2+Math.max(...r.map(x=>x.v.length))*LH(10.5)+2.4);
+    const bh=5+rh.reduce((a,b)=>a+b,0);
+    doc.setFillColor(...GR);doc.rect(M,y,CW,bh,"F");doc.setFillColor(...Y);doc.rect(M,y,1.6,bh,"F");
+    let yy=y+5;
+    rows.forEach((r,ri)=>{r.forEach((cell,ci)=>{const x=M+7+ci*(CW/2);
+      F("Saira","bold",7.8,MU);doc.text(cell.l,x,yy+1.5,{charSpace:.5});
+      F("Barlow","semibold",10.5,TX);doc.text(cell.v,x,yy+6,{lineHeightFactor:1.28});});yy+=rh[ri];});
+    y+=bh+7;
+  }
+
+  /* table */
+  const cx={n:M+4,d:M+10,q:136,p:167,t:W-M-3};
+  const DW=cx.q-12-cx.d;                 // description width
+  function thead(cont){
+    doc.setFillColor(...BK);doc.rect(M,y,CW,9,"F");doc.setFillColor(...Y);doc.rect(M,y+9,CW,.8,"F");
+    F("Saira","bold",9.5,Y);
+    doc.text("#",cx.n,y+6,{align:"center"});doc.text("DESCRIPCIÓN DEL SERVICIO"+(cont?"  (continuación)":""),cx.d,y+6,{charSpace:.4});
+    doc.text("CANT.",cx.q,y+6,{align:"right",charSpace:.4});doc.text("VALOR UNIT.",cx.p,y+6,{align:"right",charSpace:.4});doc.text("TOTAL",cx.t,y+6,{align:"right",charSpace:.4});
+    y+=10.6;
+  }
+  function contNote(){F("Barlow","normal",8,MU);doc.text("Continúa en la página siguiente",W-M,LIMIT+3.5,{align:"right"})}
+  thead(false);
+  const bodyLH=LH(10),PADT=2.4,PADB=2.6;
+  items.forEach((it,i)=>{
+    F("Barlow","normal",10);
+    let lines=doc.splitTextToSize(it.d.trim()||"—",DW);
+    let first=true;
+    // a row needs at least one line; if even one line doesn't fit, move to next page
+    while(lines.length){
+      const room=Math.floor((LIMIT-y-PADT-PADB)/bodyLH);
+      if(room<1||(first&&room<Math.min(lines.length,2))){contNote();newPage();thead(true);continue;}
+      const chunk=lines.slice(0,room);lines=lines.slice(room);
+      const rh=PADT+chunk.length*bodyLH+PADB;
+      if(i%2===0){doc.setFillColor(...GR);doc.rect(M,y,CW,rh,"F")}
+      const by=y+PADT+bodyLH*0.72;
+      F("Barlow","normal",10,TX);doc.text(chunk,cx.d,by,{lineHeightFactor:1.28});
+      if(!first){F("Saira","bold",10,[190,190,194]);doc.text(String(i+1),cx.n,by,{align:"center"});}
+      if(first){
+        F("Saira","bold",10,MU);doc.text(String(i+1),cx.n,by,{align:"center"});
+        F("Barlow","normal",10,TX);
+        doc.text(fmtQty(parseQty(it.q)),cx.q,by,{align:"right"});
+        doc.text(clp(parseMoney(it.p)),cx.p,by,{align:"right"});
+        F("Barlow","bold",10,TX);doc.text(clp(lineTotal(it)),cx.t,by,{align:"right"});
+      }
+      doc.setDrawColor(...LN);doc.setLineWidth(.2);doc.line(M,y+rh,W-M,y+rh);
+      y+=rh;first=false;
+      if(lines.length){contNote();newPage();thead(true);}
+    }
+  });
+  doc.setDrawColor(...BK);doc.setLineWidth(.6);doc.line(M,y,W-M,y);
+
+  /* total block (kept together) */
+  const TB=20;
+  if(y+6+TB>LIMIT){newPage()}
+  y+=6;
+  const tw=88,tx=W-M-tw;
+  doc.setFillColor(...BK);doc.rect(tx,y,tw,16,"F");doc.setFillColor(...Y);doc.rect(tx,y,3,16,"F");
+  doc.triangle(tx+3,y+16,tx+3,y+10,tx+9,y+16,"F");
+  F("Saira","bold",11,SIL);doc.text("TOTAL",tx+9,y+10.2,{charSpace:1.4});
+  F("Saira","black",21,Y);doc.text(clp(total),W-M-4,y+11.3,{align:"right"});
+  F("Barlow","normal",8.5,MU);
+  doc.text("Valores totales en pesos chilenos (CLP).",M,y+6.5);
+  doc.text(items.length+(items.length===1?" ítem cotizado.":" ítems cotizados."),M,y+11);
+  y+=16+10;
+
+  /* observations: flow line by line across pages */
+  const obs=S.obs.trim();
+  if(obs){
+    F("Barlow","normal",10);
+    let lines=doc.splitTextToSize(obs,CW);
+    if(y+8+LH(10)*Math.min(lines.length,2)>LIMIT)newPage();
+    label("OBSERVACIONES",M,y);y+=7.5;
+    while(lines.length){
+      const room=Math.floor((LIMIT-y)/LH(10));
+      if(room<1){newPage();label("OBSERVACIONES (continuación)",M,y);y+=7.5;continue}
+      const chunk=lines.slice(0,room);lines=lines.slice(room);
+      F("Barlow","normal",10,TX);doc.text(chunk,M,y,{lineHeightFactor:1.28});
+      y+=chunk.length*LH(10);
+      if(lines.length){newPage();label("OBSERVACIONES (continuación)",M,y);y+=7.5}
+    }
+    y+=4;
+  }
+
+  /* signature (kept together, sits after content) */
+  const SB=30;
+  if(y+SB>LIMIT)newPage();
+  const sy=Math.max(y+18,TOP+18);
+  const sx=W-M-72;
+  doc.setDrawColor(...BK);doc.setLineWidth(.45);doc.line(sx,sy,W-M,sy);
+  F("Saira","bold",13,TX);doc.text(EMPRESA.tecnico,sx+36,sy+6,{align:"center",charSpace:.3});
+  F("Barlow","normal",8.8,MU);doc.text(EMPRESA.cargo+" · BenavideSport",sx+36,sy+10.5,{align:"center"});
+  F("Barlow","semibold",9.5,TX);doc.text("Gracias por confiar en BenavideSport.",M,sy+6);
+  F("Barlow","normal",8.8,MU);doc.text("Consultas y agendamiento: "+EMPRESA.tel,M,sy+10.5);
+
+  const n=doc.getNumberOfPages();for(let p=1;p<=n;p++){doc.setPage(p);footer(p,n)}
+  doc.setProperties({title:"Cotización N° "+pad(S.num)+" - BenavideSport",author:EMPRESA.tecnico});
+  return doc;
+}
+function fileName(){const cl=(S.cliente.nombre||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^\w]+/g,"_").replace(/^_|_$/g,"");
+  return "Cotizacion_"+pad(S.num)+"_BenavideSport"+(cl?"_"+cl:"")+".pdf"}
+
+async function output(mode){
+  const items=S.items.filter(it=>it.d.trim()||parseMoney(it.p));
+  if(!items.length){toast("Agrega al menos una línea con descripción o valor");return}
+  await loadAssets();
+  let doc;try{doc=buildPDF()}catch(e){console.error(e);toast("No se pudo crear el PDF. Revisa los datos e intenta otra vez.");return}
+  const blob=doc.output("blob"),name=fileName();
+  archive();S.saved=true;save();
+  if(mode==="share"){
+    const file=new File([blob],name,{type:"application/pdf"});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      try{await navigator.share({files:[file],title:"Cotización N° "+pad(S.num),text:"Cotización N° "+pad(S.num)+" - BenavideSport. Total: "+clp(totals())});toast("Cotización enviada y guardada");}
+      catch(e){if(e.name!=="AbortError")download(blob,name);}
+      return;
+    }
+    download(blob,name);toast("Este navegador no permite compartir directo. El PDF se descargó.");return;
+  }
+  if(mode==="preview"){const url=URL.createObjectURL(blob);const w=window.open(url,"_blank");if(!w)download(blob,name);setTimeout(()=>URL.revokeObjectURL(url),60000);return}
+  download(blob,name);toast("PDF descargado");
+}
+function download(blob,name){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)}
+$("btnShare").onclick=()=>output("share");
+$("btnPreview").onclick=()=>output("preview");
+
+window.__bs={buildPDF,get S(){return S},set S(v){S=v}};
+renderAll();
+loadAssets();
+if("serviceWorker" in navigator && location.protocol.startsWith("http")){navigator.serviceWorker.register("sw.js").catch(()=>{})}
+</script>
+</body>
+</html>
