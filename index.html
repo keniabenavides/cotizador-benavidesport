@@ -207,12 +207,18 @@ const EMPRESA = {
 const FONT_BASE="https://cdn.jsdelivr.net/npm/@expo-google-fonts/";
 const FONT_FILES={Barlow_400Regular:"barlow@0.4.1/400Regular/",Barlow_600SemiBold:"barlow@0.4.1/600SemiBold/",Barlow_700Bold:"barlow@0.4.1/700Bold/",
   SairaCondensed_700Bold:"saira-condensed@0.4.1/700Bold/",SairaCondensed_800ExtraBold:"saira-condensed@0.4.1/800ExtraBold/"};
-let LOGO_PDF=null,PDF_FONTS=null,assetsP=null;
+let LOGO_PDF=null,PDF_FONTS=null,STAMP=null,assetsP=null;
 const toB64=buf=>{const u=new Uint8Array(buf);let s="";for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)};
 function loadAssets(){
   if(assetsP)return assetsP;
   assetsP=(async()=>{
     try{LOGO_PDF="data:image/jpeg;base64,"+toB64(await (await fetch("logo.jpg")).arrayBuffer())}catch(e){LOGO_PDF=null}
+    // stamp: tinted ink-blue and slightly rotated so it reads as a rubber stamp
+    if(!STAMP)try{const img=new Image();img.src="TimbreBS.png";await img.decode();
+      const N=640,c=document.createElement("canvas");c.width=c.height=N;const g=c.getContext("2d");
+      g.translate(N/2,N/2);g.rotate(-9*Math.PI/180);g.drawImage(img,-N*.46,-N*.46,N*.92,N*.92);
+      g.setTransform(1,0,0,1,0,0);g.globalCompositeOperation="source-in";g.fillStyle="#1f3a8a";g.fillRect(0,0,N,N);
+      STAMP=c.toDataURL("image/png")}catch(e){STAMP=null}
     try{const out={};await Promise.all(Object.entries(FONT_FILES).map(async([k,v])=>{const r=await fetch(FONT_BASE+v+k+".ttf");if(!r.ok)throw 0;out[k]=toB64(await r.arrayBuffer())}));PDF_FONTS=out}
     catch(e){PDF_FONTS=null}
   })();
@@ -565,12 +571,14 @@ function buildPDF(){
   }
 
   /* signature (kept together, sits after content) */
-  const SB=30;
+  const SB=54;
   if(y+SB>LIMIT)newPage();
-  const sy=Math.max(y+18,TOP+18);
+  const sy=Math.max(y+42,TOP+42);
   const sx=W-M-72;
   doc.setDrawColor(...BK);doc.setLineWidth(.45);doc.line(sx,sy,W-M,sy);
   F("Saira","bold",13,TX);doc.text(EMPRESA.tecnico,sx+36,sy+6,{align:"center",charSpace:.3});
+  if(STAMP){const d=42;try{doc.setGState(new doc.GState({opacity:.9}))}catch(e){}
+    doc.addImage(STAMP,"PNG",sx+36-d/2,sy-d+3.5,d,d);try{doc.setGState(new doc.GState({opacity:1}))}catch(e){}}
   F("Barlow","normal",8.8,MU);doc.text(EMPRESA.cargo+" · BenavideSport",sx+36,sy+10.5,{align:"center"});
   F("Barlow","semibold",9.5,TX);doc.text("Gracias por confiar en BenavideSport.",M,sy+6);
   F("Barlow","normal",8.8,MU);doc.text("Consultas y agendamiento: "+EMPRESA.tel,M,sy+10.5);
